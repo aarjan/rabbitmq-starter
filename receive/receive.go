@@ -3,8 +3,6 @@ package main
 import (
 	"fmt"
 	"log"
-	"strings"
-	"time"
 
 	"github.com/streadway/amqp"
 )
@@ -20,21 +18,41 @@ func main() {
 	failOnError(err, "failed to create channel")
 	defer ch.Close()
 
-	// define a queue
-	q, err := ch.QueueDeclare(
-		"Hello queue",
+	err = ch.ExchangeDeclare(
+		"logs",
+		"fanout",
 		true,
 		false,
 		false,
 		false,
 		nil,
 	)
+	failOnError(err, "failed to create an exchange")
+
+	// define a queue
+	q, err := ch.QueueDeclare(
+		"",
+		false,
+		false,
+		true,
+		false,
+		nil,
+	)
 	failOnError(err, "failed to create a queue")
+
+	err = ch.QueueBind(
+		q.Name,
+		"",
+		"logs",
+		false,
+		nil,
+	)
+	failOnError(err, "failed to bind exchange to queue")
 
 	msgs, err := ch.Consume(
 		q.Name,
 		"",
-		false,
+		true,
 		false,
 		false,
 		false,
@@ -48,9 +66,6 @@ func main() {
 		for m := range msgs {
 			body := string(m.Body)
 			fmt.Println("Received a message, ", body)
-			count := strings.Count(body, ".")
-			time.Sleep(time.Duration(count) * time.Second)
-			fmt.Println("done!")
 			m.Ack(false)
 		}
 	}()
