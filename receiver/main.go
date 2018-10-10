@@ -18,60 +18,22 @@ func main() {
 	failOnError(err, "failed to create channel")
 	defer ch.Close()
 
-	err = ch.ExchangeDeclare(
-		"logs",
-		"fanout",
-		true,
-		false,
-		false,
-		false,
-		nil,
-	)
-	failOnError(err, "failed to create an exchange")
-
-	// define a queue
-	q, err := ch.QueueDeclare(
-		"",
-		false,
-		false,
-		true,
-		false,
-		nil,
-	)
-	failOnError(err, "failed to create a queue")
-
-	err = ch.QueueBind(
-		q.Name,
-		"",
-		"logs",
-		false,
-		nil,
-	)
-	failOnError(err, "failed to bind exchange to queue")
-
-	msgs, err := ch.Consume(
-		q.Name,
-		"",
-		true,
-		false,
-		false,
-		false,
-		nil,
-	)
-	failOnError(err, "failed to consume message")
-
 	forever := make(chan struct{})
+
+	// type of exchange to choose!
+	msgs := topic(ch)
+	// msgs := direct(ch)
+	// msgs := fanout(ch)
 
 	go func() {
 		for m := range msgs {
 			body := string(m.Body)
 			fmt.Println("Received a message, ", body)
-			m.Ack(false)
 		}
 	}()
 
+	log.Printf(" [x] Waiting for logs. To exit press Ctrl+C")
 	<-forever
-
 }
 
 func failOnError(err error, msg string) {
