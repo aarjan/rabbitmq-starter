@@ -1,4 +1,4 @@
-package main
+ 	package main
 
 import (
 	"log"
@@ -36,12 +36,12 @@ func fibRPC(n int) (res int) {
 	defer ch.Close()
 
 	q, err := ch.QueueDeclare(
-		"",
-		false,
-		false,
-		true,
-		false,
-		nil,
+		"",    // queue name
+		false, // durable
+		false, // auto del
+		true,  // exclusive
+		false, // no wait
+		nil,   // args
 	)
 	failOnError(err, "failed to create a queue")
 

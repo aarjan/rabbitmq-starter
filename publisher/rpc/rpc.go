@@ -34,12 +34,11 @@ func failOnError(err error, msg string) {
 
 // We use a simple fibonacci generator as method that processes the input and returns a result
 func fib(n int) int {
-	if n == 0 {
-		return 1
-	} else if n == 1 {
-		return 1
+	x, y := 0, 1
+	for i := 0; i < n; i++ {
+		x, y = y, x+y
 	}
-	return fib(n-1) + fib(n-2)
+	return x
 }
 
 func main() {
@@ -71,13 +70,13 @@ func main() {
 	failOnError(err, "failed to set Qos")
 
 	msgs, err := ch.Consume(
-		q.Name,
-		"",
-		false,
-		false,
-		false,
-		false,
-		nil,
+		q.Name, //queue
+		"",     // consumer
+		false,  // auto ack
+		false,  // exclusive
+		false,  // no local
+		false,  // no wait
+		nil,    // arguments
 	)
 	failOnError(err, "failed to establish consumer")
 
