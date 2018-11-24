@@ -15,7 +15,24 @@
 * The request is sent to `rpc_queue` queue.
 * The RPC worker/server is waiting for the request on that queue. It checks the `correlation_id` property.
 * If matched, it returns the response on the callback queue.
- */
+
+Applications:
+	- use rabbitmq rpc instead of resque to communicate with 'rendering'
+	-
+
+	Can rpc used to communicate with dl & dte server!
+	- go & nodejs server
+	- every request between these server has to pass within rabbitmq
+	- caveats:
+		- no use of contexts; no way of cancelling the request
+	- solution:
+		- use ticker to stop the request after timeout
+		- what is circuit-breaker pattern? can it be implemented?
+
+	TODO:
+	- run benchmarks against HTTP & rpc for different types of request
+
+*/
 
 package main
 
@@ -84,6 +101,7 @@ func main() {
 
 	go func() {
 		for m := range msgs {
+			// TODO: decode the message into a request struct
 			n, err := strconv.Atoi(string(m.Body))
 			failOnError(err, "invalid integer")
 

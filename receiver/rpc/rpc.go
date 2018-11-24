@@ -1,6 +1,7 @@
- 	package main
+package main
 
 import (
+	"fmt"
 	"log"
 	"math/rand"
 	"os"
@@ -24,7 +25,7 @@ func randInt(min, max int) int {
 	return min + rand.Intn(max-min)
 }
 
-func fibRPC(n int) (res int) {
+func fibRPC(n int) int {
 	// create connection
 	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672")
 	failOnError(err, "failed to start server")
@@ -71,6 +72,7 @@ func fibRPC(n int) (res int) {
 	)
 	failOnError(err, "failed to publish")
 
+	res := 0
 	for m := range msgs {
 		if corrID == m.CorrelationId {
 			res, err = strconv.Atoi(string(m.Body))
@@ -78,7 +80,7 @@ func fibRPC(n int) (res int) {
 			break
 		}
 	}
-	return
+	return res
 }
 
 func main() {
@@ -86,7 +88,19 @@ func main() {
 
 	n := bodyForm(os.Args)
 	log.Printf(" [x] Requesting fib(%d)", n)
-	log.Printf(" [.] Got %d", fibRPC(n))
+
+	start := time.Now()
+
+	// use Ticker for timeouts
+	go func() {
+		select {
+		case <-time.Tick(6 * time.Millisecond):
+			failOnError(fmt.Errorf("timeout"), "could not process the request")
+		}
+	}()
+
+	val := fibRPC(n)
+	log.Printf(" [.] Got %d, time:%fms", val, time.Since(start).Seconds()*1000)
 }
 
 func bodyForm(args []string) int {
